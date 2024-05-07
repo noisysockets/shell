@@ -23,20 +23,15 @@ import (
 	"syscall"
 	"time"
 
+	"dario.cat/mergo"
 	"github.com/noisysockets/shell/internal/io"
 	"github.com/noisysockets/shell/internal/message"
 	"github.com/noisysockets/shell/internal/message/v1alpha1"
+	"github.com/noisysockets/shell/internal/ptr"
 
 	"github.com/gorilla/websocket"
 	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
-)
-
-const (
-	heartbeatInterval = time.Minute
-	heartbeatTimeout  = 30 * time.Second
-	netTimeout        = 10 * time.Second
-	ackTimeout        = 30 * time.Second
 )
 
 var (
@@ -48,10 +43,26 @@ var (
 // MessageHandler is a function that handles messages.
 type MessageHandler func(message.Message) (sendAck bool, err error)
 
-// Session represents an noisy shell session.
+// Config is the configuration for a session.
+type Config struct {
+	// NetTimeout is the timeout for network operations,
+	// eg. reading and writing to a socket.
+	NetTimeout *time.Duration
+	// AckTimeout is the timeout for waiting for an ack reply.
+	AckTimeout *time.Duration
+	// HeartbeatInterval is the interval between sending heartbeats.
+	HeartbeatInterval *time.Duration
+	// HeartbeatTimeout is the timeout for waiting for a heartbeat reply.
+	HeartbeatTimeout *time.Duration
+	// MessageHandlers is a map of message handlers for specific message types.
+	MessageHandlers map[string]MessageHandler
+}
+
+// Session represents an shell session.
 type Session struct {
 	logger                 *slog.Logger
 	ws                     *websocket.Conn
+	conf                   *Config
 	dataReader             io.ReadCloser
 	dataWriter             io.WriteCloser
 	tasks                  *errgroup.Group
@@ -64,9 +75,22 @@ type Session struct {
 	sendMessageMu          sync.Mutex
 }
 
-// NewSession creates a new noisy shell session.
-func NewSession(ctx context.Context, logger *slog.Logger, ws *websocket.Conn,
-	messageHandlers map[string]MessageHandler) (*Session, error) {
+// NewSession creates a new shell session.
+func NewSession(ctx context.Context, logger *slog.Logger,
+	ws *websocket.Conn, conf *Config) (*Session, error) {
+	if conf == nil {
+		conf = &Config{}
+	}
+
+	if err := mergo.Merge(conf, &Config{
+		NetTimeout:        ptr.To(defaultNetTimeout),
+		AckTimeout:        ptr.To(defaultAckTimeout),
+		HeartbeatInterval: ptr.To(defaultHeartbeatInterval),
+		HeartbeatTimeout:  ptr.To(defaultHeartbeatTimeout),
+	}); err != nil {
+		return nil, fmt.Errorf("failed to set session config defaults: %w", err)
+	}
+
 	logger = logger.WithGroup("session")
 
 	ws.SetReadLimit(message.MaxSize)
@@ -91,6 +115,7 @@ func NewSession(ctx context.Context, logger *slog.Logger, ws *websocket.Conn,
 	s := &Session{
 		logger:                 logger,
 		ws:                     ws,
+		conf:                   conf,
 		dataReader:             dataReader,
 		dataWriter:             dataWriter,
 		tasks:                  tasks,
@@ -100,10 +125,12 @@ func NewSession(ctx context.Context, logger *slog.Logger, ws *websocket.Conn,
 		messageHandlersForID:   make(map[string]MessageHandler),
 	}
 
+	// Register the fallthrough ack handler (typically a higher priority id based
+	// handler will be called instead).
 	s.messageHandlersForType[message.Type(new(v1alpha1.Ack))] = func(msg message.Message) (bool, error) {
 		ackMsg := msg.(*v1alpha1.Ack)
 
-		logger.Debug("Unhandled ack",
+		logger.Warn("Unhandled ack",
 			slog.String("id", ackMsg.GetID()),
 			slog.String("status", string(ackMsg.Status)),
 			slog.String("reason", ackMsg.Reason))
@@ -132,7 +159,7 @@ func NewSession(ctx context.Context, logger *slog.Logger, ws *websocket.Conn,
 	}
 
 	// Register user supplied message handlers (if present).
-	for tm, handler := range messageHandlers {
+	for tm, handler := range conf.MessageHandlers {
 		s.messageHandlersForType[tm] = handler
 	}
 
@@ -157,7 +184,7 @@ func (s *Session) Close() error {
 		closeMessage = websocket.FormatCloseMessage(websocket.CloseInternalServerErr, tasksErr.Error())
 	}
 
-	if err := s.ws.WriteControl(websocket.CloseMessage, closeMessage, time.Now().Add(netTimeout)); err != nil {
+	if err := s.ws.WriteControl(websocket.CloseMessage, closeMessage, time.Now().Add(*s.conf.NetTimeout)); err != nil {
 		s.logger.Debug("Failed to send close message to peer", slog.Any("error", err))
 	}
 
@@ -264,7 +291,7 @@ func (s *Session) WriteControl(msg message.Message) error {
 	select {
 	case err := <-result:
 		return err
-	case <-time.After(ackTimeout):
+	case <-time.After(*s.conf.AckTimeout):
 		s.messageHandlersMu.Lock()
 		delete(s.messageHandlersForID, id)
 		s.messageHandlersMu.Unlock()
@@ -300,7 +327,7 @@ func (s *Session) sendMessage(msg message.Message) error {
 		slog.String("type", message.Type(msg)),
 		slog.Int("size", len(msgData)))
 
-	if err := s.ws.SetWriteDeadline(time.Now().Add(netTimeout)); err != nil {
+	if err := s.ws.SetWriteDeadline(time.Now().Add(*s.conf.NetTimeout)); err != nil {
 		return fmt.Errorf("failed to set write deadline: %w", err)
 	}
 
@@ -431,7 +458,7 @@ func (s *Session) sendHeartbeats() error {
 	s.logger.Debug("Sending regular heartbeats")
 	defer s.logger.Debug("Stopped sending regular heartbeats")
 
-	ticker := time.NewTicker(heartbeatInterval)
+	ticker := time.NewTicker(*s.conf.HeartbeatInterval)
 
 	for {
 		select {
@@ -457,14 +484,16 @@ func (s *Session) sendHeartbeats() error {
 				return nil
 			})
 
-			if err := s.ws.WriteControl(websocket.PingMessage, []byte(id),
-				time.Now().Add(netTimeout)); err != nil {
+			s.sendMessageMu.Lock()
+			err := s.ws.WriteControl(websocket.PingMessage, []byte(id), time.Now().Add(*s.conf.AckTimeout))
+			s.sendMessageMu.Unlock()
+			if err != nil {
 				return fmt.Errorf("failed to send heartbeat: %w", err)
 			}
 
 			select {
 			case <-received:
-			case <-time.After(heartbeatTimeout):
+			case <-time.After(*s.conf.HeartbeatTimeout):
 				return ErrHeartbeatTimeout
 			case <-s.tasksCtx.Done():
 				return s.tasksCtx.Err()

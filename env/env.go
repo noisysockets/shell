@@ -7,16 +7,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package shell
+// Package env provides utilities for working with environment variables.
+package env
 
 import (
 	"os"
 	"strings"
 )
 
-// SafeEnvVars filters the os.Environ() into a safe subset that can be passed
-// to the remote shell server, includes TERM, LANG, and LC_*.
-func SafeEnvVars(env []string) []string {
+// FilterSafe filters the given client environment variables into a safe subset
+// that can be passed to the server, includes TERM, LANG, and LC_*.
+func FilterSafe(env []string) []string {
 	var safeEnv []string
 	for _, e := range env {
 		parts := strings.SplitN(e, "=", 2)
@@ -33,9 +34,9 @@ func SafeEnvVars(env []string) []string {
 	return safeEnv
 }
 
-// defaultEnv returns a minimal list of env vars that can be inherited by the
+// Default returns a minimal list of env vars that will be inherited by the
 // shell process. This is used to avoid leaking sensitive information.
-func defaultEnv() []string {
+func Default() []string {
 	var env []string
 	for _, key := range []string{"USER", "LOGNAME", "HOME", "PATH", "SHELL", "TZ"} {
 		if os.Getenv(key) != "" {

@@ -59,8 +59,9 @@ func TestSession(t *testing.T) {
 	}
 
 	// Create a new session for the server.
-	serverSession, err := session.NewSession(ctx, logger, serverWs,
-		map[string]session.MessageHandler{message.Type(new(v1alpha1.TerminalOpenRequest)): handleTerminalOpenRequest})
+	serverSession, err := session.NewSession(ctx, logger, serverWs, &session.Config{
+		MessageHandlers: map[string]session.MessageHandler{message.Type(new(v1alpha1.TerminalOpenRequest)): handleTerminalOpenRequest},
+	})
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = serverSession.Close()

@@ -7,17 +7,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package shell_test
+package env_test
 
 import (
 	"testing"
 
-	"github.com/noisysockets/shell"
+	"github.com/noisysockets/shell/env"
+
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSafeEnvVars(t *testing.T) {
-	env := []string{
+func TestFiterSafe(t *testing.T) {
+	originalEnv := []string{
 		"TERM=xterm-256color",
 		"LANG=en_US.UTF-8",
 		"LC_ALL=C",
@@ -28,12 +29,12 @@ func TestSafeEnvVars(t *testing.T) {
 		"SECRET_KEY=supersecret",
 	}
 
-	expectedEnv := []string{
+	filteredEnv := []string{
 		"TERM=xterm-256color",
 		"LANG=en_US.UTF-8",
 		"LC_ALL=C",
 		"LC_TIME=en_US.UTF-8",
 	}
 
-	assert.ElementsMatch(t, expectedEnv, shell.SafeEnvVars(env))
+	assert.ElementsMatch(t, filteredEnv, env.FilterSafe(originalEnv))
 }

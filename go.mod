@@ -3,6 +3,7 @@ module github.com/noisysockets/shell
 go 1.22.0
 
 require (
+	dario.cat/mergo v1.0.0
 	github.com/creack/pty v1.1.21
 	github.com/gorilla/websocket v1.5.1
 	github.com/neilotoole/slogt v1.1.0

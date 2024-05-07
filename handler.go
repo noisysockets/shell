@@ -19,6 +19,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/noisysockets/shell/env"
 	"github.com/noisysockets/shell/internal/io"
 	"github.com/noisysockets/shell/internal/message"
 	"github.com/noisysockets/shell/internal/message/v1alpha1"
@@ -62,7 +63,9 @@ func NewHandler(ctx context.Context, logger *slog.Logger, ws *websocket.Conn) (*
 	}
 
 	var err error
-	h.session, err = session.NewSession(ctx, logger, ws, messageHandlers)
+	h.session, err = session.NewSession(ctx, logger, ws, &session.Config{
+		MessageHandlers: messageHandlers,
+	})
 
 	h.tasks.Go(func() error {
 		go func() {
@@ -130,7 +133,7 @@ func (h *Handler) handleTerminalOpenRequest(msg message.Message) (bool, error) {
 
 	h.cmd = exec.CommandContext(h.tasksCtx, shell)
 	h.cmd.Dir = homeDir
-	h.cmd.Env = append(defaultEnv(), SafeEnvVars(req.Env)...)
+	h.cmd.Env = append(env.Default(), env.FilterSafe(req.Env)...)
 
 	h.pty, err = pty.StartWithSize(h.cmd, &pty.Winsize{
 		Cols: uint16(req.Columns),

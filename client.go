@@ -56,7 +56,9 @@ func NewClient(ctx context.Context, logger *slog.Logger, ws *websocket.Conn) (*C
 	}
 
 	var err error
-	c.session, err = session.NewSession(ctx, logger, ws, messageHandlers)
+	c.session, err = session.NewSession(ctx, logger, ws, &session.Config{
+		MessageHandlers: messageHandlers,
+	})
 	if err != nil {
 		return nil, err
 	}
