@@ -17,6 +17,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,6 +25,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/noisysockets/shell"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -32,8 +34,17 @@ func main() {
 		Level: slog.LevelDebug,
 	}))
 
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins: []string{
+			"http://localhost",
+			"http://localhost:*",
+			"http://127.0.0.1:*",
+			"http://[::1]:*",
+		},
+	})
+
 	upgrader := websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool { return true },
+		CheckOrigin: corsHandler.OriginAllowed,
 	}
 
 	mux := http.NewServeMux()
@@ -43,19 +54,28 @@ func main() {
 	})
 
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		ws, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "Failed to upgrade connection: %v", err)
-			return
-		}
-
 		logger := logger.With(slog.Any("remote", r.RemoteAddr))
 
 		logger.Info("Handling connection")
 
+		if !netip.MustParseAddrPort(r.RemoteAddr).Addr().IsLoopback() {
+			logger.Warn("Only local connections are allowed")
+
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Fprintf(w, "Forbidden")
+			return
+		}
+
+		ws, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			logger.Error("Failed to upgrade connection", slog.Any("error", err))
+			return
+		}
+
 		h, err := shell.NewHandler(r.Context(), logger, ws)
 		if err != nil {
+			logger.Error("Failed to create shell handler", slog.Any("error", err))
+
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, "Failed to create shell handler: %v", err)
 			return
@@ -63,18 +83,17 @@ func main() {
 		defer h.Close()
 
 		if err := h.Wait(); err != nil {
-			logger.Error("Shell handler failed")
+			logger.Error("Shell handler failed", slog.Any("error", err))
 
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, "Shell handler failed: %v", err)
 			return
 		}
 
-		logger.Info("Shell handler finished")
+		logger.Info("Shell handler completed")
 	})
 
 	srv := &http.Server{
-		Addr:    "localhost:8080",
 		Handler: mux,
 	}
 

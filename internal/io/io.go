@@ -11,10 +11,27 @@ package io
 
 import (
 	stdio "io"
+	"time"
 )
 
-type Reader = stdio.Reader
-type ReadCloser = stdio.ReadCloser
+// Reader types.
+type DeadlineReader interface {
+	stdio.Reader
+	SetReadDeadline(t time.Time) error
+}
 
-type Writer = stdio.Writer
-type WriteCloser = stdio.WriteCloser
+type DeadlineReadCloser interface {
+	DeadlineReader
+	stdio.Closer
+}
+
+// Writer types.
+type DeadlineWriter interface {
+	stdio.Writer
+	SetWriteDeadline(t time.Time) error
+}
+
+type DeadlineWriteCloser interface {
+	DeadlineWriter
+	stdio.Closer
+}

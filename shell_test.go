@@ -131,7 +131,7 @@ func TestShell(t *testing.T) {
 	}
 }
 
-func readWithTimeout(ctx context.Context, r io.Reader, timeout time.Duration) (string, error) {
+func readWithTimeout(ctx context.Context, r io.DeadlineReader, timeout time.Duration) (string, error) {
 	readCtx, readCancel := context.WithTimeout(ctx, timeout)
 	defer readCancel()
 

@@ -9,7 +9,7 @@
     "lib/**/*"
   ],
   "scripts": {
-    "format": "prettier --write 'src/**/*.{ts,js,json}'",
+    "format": "prettier --write 'src/**/*.{ts,js,json,md}'",
     "lint": "eslint --fix .",
     "build": "tsc",
     "test": "jest"

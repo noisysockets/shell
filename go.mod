@@ -7,6 +7,7 @@ require (
 	github.com/creack/pty v1.1.21
 	github.com/gorilla/websocket v1.5.1
 	github.com/neilotoole/slogt v1.1.0
+	github.com/rs/cors v1.11.0
 	github.com/rs/xid v1.5.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/sync v0.7.0

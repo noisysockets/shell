@@ -9,13 +9,16 @@
 
 package io
 
-import "time"
+import (
+	stdio "io"
+	"time"
+)
 
 type nopDeadlineReader struct {
-	Reader
+	stdio.Reader
 }
 
-func NopDeadlineReader(r Reader) Reader {
+func NopDeadlineReader(r stdio.Reader) DeadlineReader {
 	return nopDeadlineReader{r}
 }
 

@@ -112,7 +112,7 @@ func (c *Client) Wait() error {
 
 // OpenTerminal opens a new terminal.
 func (c *Client) OpenTerminal(columns, rows int, env []string,
-	input io.Reader, output io.Writer, onExit ExitHandler) error {
+	input io.DeadlineReader, output io.DeadlineWriter, onExit ExitHandler) error {
 	err := c.session.WriteControl(&v1alpha1.TerminalOpenRequest{
 		Columns: columns,
 		Rows:    rows,

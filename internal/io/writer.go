@@ -18,7 +18,7 @@ type nopDeadlineWriter struct {
 	stdio.Writer
 }
 
-func NopDeadlineWriter(w stdio.Writer) stdio.Writer {
+func NopDeadlineWriter(w stdio.Writer) DeadlineWriter {
 	return nopDeadlineWriter{w}
 }
 

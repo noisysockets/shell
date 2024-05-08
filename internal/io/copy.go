@@ -13,7 +13,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
+	stdio "io"
 	"net"
 	"os"
 	"strings"
@@ -21,21 +21,13 @@ import (
 	"time"
 )
 
-type DeadlineReader interface {
-	SetReadDeadline(t time.Time) error
-}
-
-type DeadlineWriter interface {
-	SetWriteDeadline(t time.Time) error
-}
-
 const (
 	bufferSize   = 4096
 	pollInterval = 10 * time.Millisecond
 )
 
 // CopyContext is equivalent to `io.Copy` but with context cancellation support (for deadline reader/writers).
-func CopyContext(ctx context.Context, dst io.Writer, src io.Reader) (written int64, err error) {
+func CopyContext(ctx context.Context, dst DeadlineWriter, src DeadlineReader) (written int64, err error) {
 	data := make([]byte, bufferSize)
 
 	for {
@@ -45,16 +37,12 @@ func CopyContext(ctx context.Context, dst io.Writer, src io.Reader) (written int
 		default:
 		}
 
-		if dr, ok := src.(DeadlineReader); ok {
-			if err := dr.SetReadDeadline(time.Now().Add(pollInterval)); err != nil {
-				if isClosed(err) {
-					break
-				}
-
-				return written, fmt.Errorf("failed to set read deadline: %w", err)
+		if err := src.SetReadDeadline(time.Now().Add(pollInterval)); err != nil {
+			if isClosed(err) {
+				break
 			}
-		} else {
-			return written, fmt.Errorf("source does not support deadlines")
+
+			return written, fmt.Errorf("failed to set read deadline: %w", err)
 		}
 
 		nr, readErr := src.Read(data)
@@ -77,12 +65,8 @@ func CopyContext(ctx context.Context, dst io.Writer, src io.Reader) (written int
 			default:
 			}
 
-			if dw, ok := dst.(DeadlineWriter); ok {
-				if err := dw.SetWriteDeadline(time.Now().Add(pollInterval)); err != nil {
-					return written, fmt.Errorf("failed to set write deadline: %w", err)
-				}
-			} else {
-				return written, fmt.Errorf("destination does not support deadlines")
+			if err := dst.SetWriteDeadline(time.Now().Add(pollInterval)); err != nil {
+				return written, fmt.Errorf("failed to set write deadline: %w", err)
 			}
 
 			nw, writeErr := dst.Write(data[offset:nr])
@@ -111,10 +95,10 @@ func CopyContext(ctx context.Context, dst io.Writer, src io.Reader) (written int
 }
 
 func isClosed(err error) bool {
-	if errors.Is(err, io.EOF) ||
+	if errors.Is(err, stdio.EOF) ||
 		errors.Is(err, os.ErrClosed) ||
 		errors.Is(err, net.ErrClosed) ||
-		errors.Is(err, io.ErrClosedPipe) ||
+		errors.Is(err, stdio.ErrClosedPipe) ||
 		errors.Is(err, syscall.EIO) ||
 		// poll.ErrFileClosing is not exposed by the poll package.
 		(err != nil && strings.Contains(err.Error(), "use of closed file")) {

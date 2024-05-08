@@ -63,8 +63,8 @@ type Session struct {
 	logger                 *slog.Logger
 	ws                     *websocket.Conn
 	conf                   *Config
-	dataReader             io.ReadCloser
-	dataWriter             io.WriteCloser
+	dataReader             io.DeadlineReadCloser
+	dataWriter             io.DeadlineWriteCloser
 	tasks                  *errgroup.Group
 	tasksCtx               context.Context
 	tasksCancel            context.CancelFunc
