@@ -375,6 +375,7 @@ func (s *Session) processMessages() error {
 		_, msgData, err := s.ws.ReadMessage()
 		if err != nil {
 			s.logger.Debug("Failed to read message", slog.Any("error", err))
+
 			// Has the task context been cancelled?
 			select {
 			case <-s.tasksCtx.Done():
@@ -384,8 +385,6 @@ func (s *Session) processMessages() error {
 				return err
 			default:
 			}
-
-			s.logger.Debug("Failed to read message", slog.Any("error", err))
 
 			return err
 		}
@@ -506,7 +505,10 @@ func (s *Session) sendHeartbeats() error {
 
 func ignoreExpectedError(err error) error {
 	if errors.Is(err, context.Canceled) ||
-		websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+		websocket.IsCloseError(err,
+			websocket.CloseNormalClosure,
+			websocket.CloseNoStatusReceived,
+			websocket.CloseGoingAway) {
 		return nil
 	}
 

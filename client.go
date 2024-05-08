@@ -122,10 +122,14 @@ func (c *Client) OpenTerminal(columns, rows int, env []string,
 		return err
 	}
 
-	c.onExit = onExit
-
-	// If either direction is closed, we'll abort both.
+	// If either direction is closed, or the terminal exits we'll abort both.
 	ctx, cancel := context.WithCancel(c.tasksCtx)
+
+	c.onExit = func(exitStatus int) error {
+		cancel()
+
+		return onExit(exitStatus)
+	}
 
 	// Start copying data to/from the remote shell.
 	c.tasks.Go(func() error {
@@ -165,6 +169,10 @@ func (c *Client) handleTerminalExit(msg message.Message) (bool, error) {
 	ptyExited := msg.(*v1alpha1.TerminalExit)
 
 	if c.onExit != nil {
+		defer func() {
+			c.onExit = nil
+		}()
+
 		if err := c.onExit(ptyExited.Status); err != nil {
 			return true, err
 		}

@@ -24,7 +24,8 @@ type Meta struct {
 	APIVersion string `json:"apiVersion"`
 	// Kind is the kind of the message.
 	Kind string `json:"kind"`
-	// ID is the globally unique message ID, or in the case of an Ack, the ID of the message being acknowledged.
+	// ID is the globally unique message ID, or in the case of an Ack, the ID of
+	// the message being acknowledged.
 	ID string `json:"id"`
 }
 

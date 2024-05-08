@@ -73,10 +73,10 @@ type TerminalOpenRequest struct {
 	Columns int `json:"columns"`
 	// Rows is the number of rows in the terminal.
 	Rows int `json:"rows"`
-	// Env is a list of environment variables to pass to the terminal process.
+	// Env is a list of environment variables to pass to the shell process.
 	// Uncontrolled setting of environment variables in a privileged process
 	// can be a security hazard. Server implementations must validate the
-	// environment variables before passing them to the terminal process.
+	// environment variables before passing them to the shell process.
 	// Typical safe values include TERM, LANG, and LC_*.
 	Env []string `json:"env,omitempty"`
 }
@@ -89,7 +89,7 @@ func (o *TerminalOpenRequest) GetKind() string {
 	return "TerminalOpenRequest"
 }
 
-// TerminalExit indicates the terminal session has exited.
+// TerminalExit indicates the terminal session / shell has exited.
 type TerminalExit struct {
 	message.Meta `json:",inline"`
 	// Status is the exit status of the shell process.

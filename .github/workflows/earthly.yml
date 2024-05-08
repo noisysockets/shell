@@ -1,4 +1,4 @@
-name: Lint and Test
+name: Build and Publish
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
 
     - uses: earthly/actions-setup@v1
       with:
-        version: v0.7.23
+        version: v0.8.9
   
     - name: Check Out Repo
       uses: actions/checkout@v3
@@ -25,5 +25,26 @@ jobs:
     - name: Lint
       run: earthly +lint
 
+    - name: Build
+      run: earthly +build
+
     - name: Test
       run: earthly +test
+
+  release:
+    needs: build-and-test
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: earthly/actions-setup@v1
+      with:
+        version: v0.8.9
+
+    - name: Check Out Repo
+      uses: actions/checkout@v3
+
+    - name: Publish
+      run: earthly --secret "npm_token=${NPM_TOKEN}" +publish --VERSION=${{ github.ref_name }}
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
