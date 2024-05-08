@@ -45,6 +45,6 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Publish
-      run: earthly --secret "npm_token=${NPM_TOKEN}" +publish --VERSION=${{ github.ref_name }}
+      run: earthly --secret "npm_token=${NPM_TOKEN}" +publish-ts --VERSION=${{ github.ref_name }}
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
