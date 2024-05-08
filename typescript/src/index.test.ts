@@ -9,7 +9,7 @@
 import { expect, describe, it } from "@jest/globals";
 import { EventEmitter } from "eventemitter3";
 
-import Client from "./index";
+import { Client } from "./index";
 
 describe("Noisy Sockets Shell", () => {
   it("hello", async () => {
@@ -65,7 +65,11 @@ describe("Noisy Sockets Shell", () => {
   });
 });
 
-const readWithTimeout = async (output: EventEmitter, timeoutMS: number, maxLines?: number): Promise<string> => {
+const readWithTimeout = async (
+  output: EventEmitter,
+  timeoutMS: number,
+  maxLines?: number,
+): Promise<string> => {
   let outputStr = "";
   return new Promise<string>((resolve) => {
     const listener = (data: Uint8Array) => {
@@ -83,4 +87,4 @@ const readWithTimeout = async (output: EventEmitter, timeoutMS: number, maxLines
       resolve(outputStr);
     }, timeoutMS);
   });
-}
+};

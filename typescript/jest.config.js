@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   testEnvironment: 'jsdom',
   transform: {
     "\\.[jt]s?$": "babel-jest",
