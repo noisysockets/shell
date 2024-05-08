@@ -67,7 +67,7 @@ publish-ts:
   ARG VERSION
   RUN --secret NPM_TOKEN=npm_token echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc \
     && npm version ${VERSION} \
-    && npm publish
+    && npm publish --access=public
 
 sources-ts:
   FROM +tools
