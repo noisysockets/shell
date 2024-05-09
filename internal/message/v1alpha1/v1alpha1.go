@@ -36,11 +36,11 @@ const (
 
 // Ack acknowledges a message has been received and processed.
 type Ack struct {
-	message.Meta `json:",inline"`
+	message.Meta `json:",inline" mapstructure:",squash"`
 	// Status is the status of the acknowledgment.
-	Status AckStatus `json:"status"`
+	Status AckStatus `json:"status" mapstructure:"status"`
 	// Reason is the reason for the status, typically populated for errors.
-	Reason string `json:"reason,omitempty"`
+	Reason string `json:"reason,omitempty" mapstructure:"reason,omitempty"`
 }
 
 func (a *Ack) GetAPIVersion() string {
@@ -53,9 +53,9 @@ func (a *Ack) GetKind() string {
 
 // Data is a message containing terminal data.
 type Data struct {
-	message.Meta `json:",inline"`
+	message.Meta `json:",inline" mapstructure:",squash"`
 	// Data is the base64 encoded terminal data.
-	Data string `json:"data"`
+	Data string `json:"data" mapstructure:"data"`
 }
 
 func (d *Data) GetAPIVersion() string {
@@ -68,17 +68,17 @@ func (d *Data) GetKind() string {
 
 // TerminalOpenRequest requests a new terminal session.
 type TerminalOpenRequest struct {
-	message.Meta `json:",inline"`
+	message.Meta `json:",inline" mapstructure:",squash"`
 	// Columns is the number of columns in the terminal.
-	Columns int `json:"columns"`
+	Columns int `json:"columns" mapstructure:"columns"`
 	// Rows is the number of rows in the terminal.
-	Rows int `json:"rows"`
+	Rows int `json:"rows" mapstructure:"rows"`
 	// Env is a list of environment variables to pass to the shell process.
 	// Uncontrolled setting of environment variables in a privileged process
 	// can be a security hazard. Server implementations must validate the
 	// environment variables before passing them to the shell process.
 	// Typical safe values include TERM, LANG, and LC_*.
-	Env []string `json:"env,omitempty"`
+	Env []string `json:"env,omitempty" mapstructure:"env,omitempty"`
 }
 
 func (o *TerminalOpenRequest) GetAPIVersion() string {
@@ -91,9 +91,9 @@ func (o *TerminalOpenRequest) GetKind() string {
 
 // TerminalExit indicates the terminal session / shell has exited.
 type TerminalExit struct {
-	message.Meta `json:",inline"`
+	message.Meta `json:",inline" mapstructure:",squash"`
 	// Status is the exit status of the shell process.
-	Status int `json:"status"`
+	Status int `json:"status" mapstructure:"status"`
 }
 
 func (e *TerminalExit) GetAPIVersion() string {
@@ -106,11 +106,11 @@ func (e *TerminalExit) GetKind() string {
 
 // TerminalResize resizes the terminal window.
 type TerminalResize struct {
-	message.Meta `json:",inline"`
+	message.Meta `json:",inline" mapstructure:",squash"`
 	// Columns is the number of columns in the terminal.
-	Columns int `json:"columns"`
+	Columns int `json:"columns" mapstructure:"columns"`
 	// Rows is the number of rows in the terminal.
-	Rows int `json:"rows"`
+	Rows int `json:"rows" mapstructure:"rows"`
 }
 
 func (r *TerminalResize) GetAPIVersion() string {

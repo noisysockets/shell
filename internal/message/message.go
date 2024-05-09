@@ -12,6 +12,8 @@ package message
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 const (
@@ -21,12 +23,12 @@ const (
 
 type Meta struct {
 	// APIVersion is the version of the API.
-	APIVersion string `json:"apiVersion"`
+	APIVersion string `json:"apiVersion" mapstructure:"apiVersion"`
 	// Kind is the kind of the message.
-	Kind string `json:"kind"`
+	Kind string `json:"kind" mapstructure:"kind"`
 	// ID is the globally unique message ID, or in the case of an Ack, the ID of
 	// the message being acknowledged.
-	ID string `json:"id"`
+	ID string `json:"id" mapstructure:"id"`
 }
 
 func (m *Meta) GetID() string {
@@ -55,22 +57,18 @@ func RegisterType(newMessageOfType func() Message) {
 
 // Marshal marshals a message, returning the data.
 func Marshal(msg Message) ([]byte, error) {
-	// Marshal the message to JSON (without the type meta).
-	data, err := json.Marshal(msg)
-	if err != nil {
+	// Convert the message to a map.
+	m := make(map[string]interface{})
+	if err := mapstructure.Decode(msg, &m); err != nil {
 		return nil, err
 	}
 
-	m := make(map[string]any)
-	if err := json.Unmarshal(data, &m); err != nil {
-		return nil, err
-	}
-
-	// Add the type info and marshal the message again.
+	// Add the message type information to the map.
 	m["apiVersion"] = msg.GetAPIVersion()
 	m["kind"] = msg.GetKind()
 
-	data, err = json.Marshal(m)
+	// Marshal the map to JSON.
+	data, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +83,7 @@ func Unmarshal(data []byte) (Message, error) {
 		return nil, err
 	}
 
-	typ := fmt.Sprintf("%s.%s", meta.APIVersion, meta.Kind)
+	typ := fmt.Sprintf("%s/%s", meta.APIVersion, meta.Kind)
 	newMessageOfType, ok := knownTypes[typ]
 	if !ok {
 		return nil, fmt.Errorf("unknown message type: %s", typ)
@@ -101,5 +99,5 @@ func Unmarshal(data []byte) (Message, error) {
 
 // Type returns the string formatted type of the message.
 func Type(msg Message) string {
-	return fmt.Sprintf("%s.%s", msg.GetAPIVersion(), msg.GetKind())
+	return fmt.Sprintf("%s/%s", msg.GetAPIVersion(), msg.GetKind())
 }

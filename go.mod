@@ -6,6 +6,7 @@ require (
 	dario.cat/mergo v1.0.0
 	github.com/creack/pty v1.1.21
 	github.com/gorilla/websocket v1.5.1
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/neilotoole/slogt v1.1.0
 	github.com/rs/cors v1.11.0
 	github.com/rs/xid v1.5.0

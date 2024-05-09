@@ -120,34 +120,6 @@ class Client {
     return this.send(msg, true);
   }
 
-  private async send(msg: Message, wantAck: boolean): Promise<void> {
-    await this.connected;
-
-    msg.id = new Xid().toString();
-    this.ws.send(JSON.stringify(msg));
-
-    if (!wantAck) {
-      return Promise.resolve();
-    }
-
-    return new Promise<void>((resolve, reject) => {
-      this.messageHandlersForID.set(msg.id!, (msg: Message) => {
-        this.messageHandlersForID.delete(msg.id!);
-
-        if (msg.kind === "Ack") {
-          const ack = msg as Ack;
-          if (ack.status === AckStatus.OK) {
-            resolve();
-          } else {
-            reject(`Error: ${ack.reason}`);
-          }
-        } else {
-          reject(`Unexpected message: ${msg.apiVersion}/${msg.kind}`);
-        }
-      });
-    });
-  }
-
   private handleMessage(event: MessageEvent) {
     const msg: Message = JSON.parse(event.data);
 
@@ -159,15 +131,21 @@ class Client {
       }
     }
 
-    switch (msg.kind) {
-      case "Data":
+    const msgType = `${msg.apiVersion}/${msg.kind}`;
+    switch (msgType) {
+      case "nsh/v1alpha1/Data":
         this.handleData(msg as Data);
         break;
-      case "TerminalExit":
+      case "nsh/v1alpha1/TerminalExit":
         this.handleTerminalExit(msg as TerminalExit);
         break;
+      case "nsh/v1alpha1/Ack":
+        // Ignore ack messages that are not in response to a request.
+        console.warn(`Unhandled Ack message: ${msg.id}`)
+        break;
       default:
-        console.error(`Unexpected message: ${msg.apiVersion}/${msg.kind}`);
+        console.error(`Unexpected message: ${msgType}`);
+        this.sendAck(msg, AckStatus.UNIMPLEMENTED);
     }
   }
 
@@ -191,6 +169,47 @@ class Client {
       this.onExit(msg.status);
       this.onExit = undefined;
     }
+
+    this.sendAck(msg, AckStatus.OK);
+  }
+
+  private async send(msg: Message, wantAck: boolean): Promise<void> {
+    await this.connected;
+
+    msg.id = new Xid().toString();
+    this.ws.send(JSON.stringify(msg));
+
+    if (!wantAck) {
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      this.messageHandlersForID.set(msg.id!, (msg: Message) => {
+        this.messageHandlersForID.delete(msg.id!);
+
+        if (msg.kind === "Ack") {
+          const ack = msg as Ack;
+          if (ack.status === AckStatus.OK) {
+            resolve();
+          } else {
+            reject(`Error: ${ack.reason}`);
+          }
+        } else {
+          reject(`Unexpected message: ${msg.apiVersion}.${msg.kind}`);
+        }
+      });
+    });
+  }
+
+  private async sendAck(msg: Message, status: AckStatus, reason?: string): Promise<void> {
+    const ack: Ack = {
+      apiVersion: APIVersion,
+      kind: "Ack",
+      id: msg.id,
+      status: status,
+      reason: reason,
+    };
+    return this.send(ack, false);
   }
 }
 

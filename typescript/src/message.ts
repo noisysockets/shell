@@ -34,7 +34,7 @@ interface Ack extends Meta {
   // status is the status of the acknowledgment.
   status: AckStatus;
   // reason is the reason for the status, typically populated for errors.
-  reason: string;
+  reason?: string;
 }
 
 // Data is a message containing terminal data.
