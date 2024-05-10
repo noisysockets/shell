@@ -202,6 +202,8 @@ class Client {
   }
 
   private async sendAck(msg: Message, status: AckStatus, reason?: string): Promise<void> {
+    await this.connected;
+
     const ack: Ack = {
       apiVersion: APIVersion,
       kind: "Ack",
@@ -209,7 +211,10 @@ class Client {
       status: status,
       reason: reason,
     };
-    return this.send(ack, false);
+
+    this.ws.send(JSON.stringify(ack));
+
+    return Promise.resolve();
   }
 }
 
