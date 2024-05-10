@@ -24,8 +24,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/neilotoole/slogt"
 	"github.com/noisysockets/shell"
-	"github.com/noisysockets/shell/internal/io"
 	"github.com/noisysockets/shell/internal/testutil"
+	"github.com/noisysockets/shell/io"
 	"github.com/stretchr/testify/require"
 )
 

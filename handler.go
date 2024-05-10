@@ -20,10 +20,10 @@ import (
 	"syscall"
 
 	"github.com/noisysockets/shell/env"
-	"github.com/noisysockets/shell/internal/io"
 	"github.com/noisysockets/shell/internal/message"
 	"github.com/noisysockets/shell/internal/message/v1alpha1"
 	"github.com/noisysockets/shell/internal/session"
+	"github.com/noisysockets/shell/io"
 
 	"github.com/creack/pty"
 	"golang.org/x/sync/errgroup"

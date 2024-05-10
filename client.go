@@ -15,10 +15,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/noisysockets/shell/internal/io"
 	"github.com/noisysockets/shell/internal/message"
 	"github.com/noisysockets/shell/internal/message/v1alpha1"
 	"github.com/noisysockets/shell/internal/session"
+	"github.com/noisysockets/shell/io"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/gorilla/websocket"

@@ -24,10 +24,10 @@ import (
 	"time"
 
 	"dario.cat/mergo"
-	"github.com/noisysockets/shell/internal/io"
 	"github.com/noisysockets/shell/internal/message"
 	"github.com/noisysockets/shell/internal/message/v1alpha1"
 	"github.com/noisysockets/shell/internal/ptr"
+	"github.com/noisysockets/shell/io"
 
 	"github.com/gorilla/websocket"
 	"github.com/rs/xid"

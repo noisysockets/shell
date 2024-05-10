@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/noisysockets/shell/internal/io"
+	"github.com/noisysockets/shell/io"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
