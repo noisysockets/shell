@@ -22,7 +22,6 @@ import (
 	"github.com/noisysockets/shell/env"
 	"github.com/noisysockets/shell/internal/message"
 	"github.com/noisysockets/shell/internal/message/v1alpha1"
-	"github.com/noisysockets/shell/internal/platform"
 	"github.com/noisysockets/shell/internal/session"
 	"github.com/noisysockets/shell/io"
 
@@ -144,7 +143,7 @@ func (h *Handler) handleTerminalOpenRequest(msg message.Message) (bool, error) {
 		return true, fmt.Errorf("failed to open PTY: %w", err)
 	}
 
-	if err := platform.SetNonblock(h.pty); err != nil {
+	if err := io.SetNonblock(h.pty); err != nil {
 		return true, fmt.Errorf("failed to set PTY to non-blocking mode: %w", err)
 	}
 

@@ -1,4 +1,4 @@
-//go:build !windows
+//go:build windows
 
 // SPDX-License-Identifier: MPL-2.0
 /*
@@ -9,7 +9,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package platform
+package io
 
 import (
 	"os"
@@ -17,5 +17,5 @@ import (
 )
 
 func SetNonblock(f *os.File) error {
-	return syscall.SetNonblock(int(f.Fd()), true)
+	return syscall.SetNonblock(syscall.Handle(f.Fd()), true)
 }
