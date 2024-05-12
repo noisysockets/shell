@@ -26,7 +26,7 @@ func StartServer(ctx context.Context) (net.Addr, <-chan *websocket.Conn, error) 
 	wsChan := make(chan *websocket.Conn, 1)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/shell/ws", func(w http.ResponseWriter, r *http.Request) {
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

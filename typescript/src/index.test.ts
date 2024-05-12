@@ -16,7 +16,7 @@ describe("Noisy Sockets Shell", () => {
     const input = new EventEmitter();
     const output = new EventEmitter();
 
-    const client = new Client("ws://localhost:8080/ws");
+    const client = new Client("ws://localhost:8080/shell/ws");
 
     let onExit: (exitStatus: number) => void;
     const exitPromise = new Promise<number>((resolve) => {

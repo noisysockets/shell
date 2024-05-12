@@ -39,7 +39,7 @@ func TestShell(t *testing.T) {
 	require.NoError(t, err)
 
 	// Connect to the server.
-	clientWs, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s/ws", addr), nil)
+	clientWs, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s/shell/ws", addr), nil)
 	require.NoError(t, err)
 
 	// Create a new client.

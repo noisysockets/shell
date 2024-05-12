@@ -53,7 +53,7 @@ func main() {
 		fmt.Fprintf(w, "Noisy Sockets Shell development server, If this is on the internet, please immediately report it!")
 	})
 
-	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/shell/ws", func(w http.ResponseWriter, r *http.Request) {
 		logger := logger.With(slog.Any("remote", r.RemoteAddr))
 
 		logger.Info("Handling connection")
